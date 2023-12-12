@@ -1,10 +1,12 @@
 const cc = require('currency-converter-lt');
+const db = require('../config/dbConnect');
 
 exports.convertCurrency = async (req, res) => {
     try {
         const { from, to, value } = req.body;
+        let amount = Number(value);
         let resSend = false;
-        if (!from || !to || !value) {
+        if (!from || !to || !amount) {
             res
                 .status(400)
                 .json({
@@ -13,21 +15,30 @@ exports.convertCurrency = async (req, res) => {
                 })
             resSend = true;
         }
-        if(!resSend) {
+        if (!resSend) {
             const currencyConvertor = new cc();
-            const response = await currencyConvertor.from(from).to(to).amount(value).convert();
-            const rates=await currencyConvertor.rates();
-            const obj={
+            const response = await currencyConvertor.from(from).to(to).amount(amount).convert();
+            const rates = await currencyConvertor.rates();
+            const obj = {
                 from,
                 to,
-                amountToBeConverted: value,
+                amountToBeConverted: amount,
                 convertedAmount: response,
                 rates
             }
+            const insertQuerry = `INSERT INTO posts (input_amount, input_currency, rate, output_amount, output_currency)
+            VALUES(?,?,?,?,?)`;
+            db.query(insertQuerry, [amount, from, rates, response, to], (err, result) => {
+                if (err) {
+                    console.log(err.message);
+                    return;
+                }
+                return result;
+            })
             res
                 .status(200)
                 .json({
-                    success: false,
+                    success: true,
                     message: 'Currency Successfully Converted',
                     response: obj
                 })
