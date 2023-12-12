@@ -33,7 +33,7 @@ exports.convertCurrency = async (req, res) => {
                     console.log(err.message);
                     return;
                 }
-                return result;
+                console.log (result);
             })
             res
                 .status(200)
